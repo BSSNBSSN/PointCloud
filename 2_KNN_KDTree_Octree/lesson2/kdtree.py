@@ -35,7 +35,7 @@ class Node:
 # 功能：构建树之前需要对value进行排序，同时对一个的key的顺序也要跟着改变
 # 输入：
 #     key：键
-#     value:值
+#     value: 值
 # 输出：
 #     key_sorted：排序后的键
 #     value_sorted：排序后的值
@@ -74,6 +74,27 @@ def kdtree_recursive_build(root, db, point_indices, axis, leaf_size):
         
         # 作业1
         # 屏蔽开始
+        middle_left_idx = math.ceil(point_indices_sorted.shape[0] / 2) - 1
+        middle_left_point_idx = point_indices_sorted[middle_left_idx]
+        middle_left_point_value = db[middle_left_point_idx, axis]
+        
+        middle_right_idx = middle_left_idx + 1
+        middle_right_point_idx = point_indices_sorted[middle_right_idx]
+        middle_right_point_value = db[middle_right_point_idx, axis]
+        
+        root.value = (middle_left_point_value + middle_right_point_value) / 2
+        
+        root.left = kdtree_recursive_build(root.left,
+                                           db,
+                                           point_indices_sorted[0:middle_right_idx],
+                                           axis_round_robin(axis, dim = db.shape[1]),
+                                           leaf_size)
+        
+        root.right = kdtree_recursive_build(root.right,
+                                            db,
+                                            point_indices_sorted[middle_right_idx:],
+                                            axis_round_robin(axis, dim = db.shape[1]),
+                                            leaf_size)
 
         # 屏蔽结束
     return root
@@ -139,6 +160,15 @@ def kdtree_knn_search(root: Node, db: np.ndarray, result_set: KNNResultSet, quer
     # 作业2
     # 提示：仍通过递归的方式实现搜索
     # 屏蔽开始
+    
+    if query[root.axis] <= root.value:
+        kdtree_knn_search(root.left, db, result_set, query)
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_knn_search(root.right, db, result_set, query)
+    else:
+        kdtree_knn_search(root.right, db, result_set, query)
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_knn_search(root.left, db, result_set, query)
 
     # 屏蔽结束
 
@@ -167,6 +197,15 @@ def kdtree_radius_search(root: Node, db: np.ndarray, result_set: RadiusNNResultS
     # 作业3
     # 提示：通过递归的方式实现搜索
     # 屏蔽开始
+    
+    if query[root.axis] <= root.value:
+        kdtree_radius_search(root.left, db, result_set, query)
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_radius_search(root.right, db, result_set, query)
+    else:
+        kdtree_radius_search(root.right, db, result_set, query)
+        if math.fabs(query[root.axis] - root.value) < result_set.worstDist():
+            kdtree_radius_search(root.left, db, result_set, query)
 
     # 屏蔽结束
 

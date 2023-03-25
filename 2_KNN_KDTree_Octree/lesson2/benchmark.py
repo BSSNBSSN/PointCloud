@@ -31,7 +31,7 @@ def main():
     k = 8
     radius = 1
 
-    root_dir = '/Users/renqian/cloud_lesson/kitti' # 数据集路径
+    root_dir = 'C:\\Users\\15803\\Desktop\\PointCloudCourse\\2_KNN_KDTree_Octree\\dataset' # 数据集路径
     cat = os.listdir(root_dir)
     iteration_num = len(cat)
 
@@ -39,6 +39,7 @@ def main():
     construction_time_sum = 0
     knn_time_sum = 0
     radius_time_sum = 0
+    radius_fast_time_sum = 0
     brute_time_sum = 0
     for i in range(iteration_num):
         filename = os.path.join(root_dir, cat[i])
@@ -57,17 +58,23 @@ def main():
 
         begin_t = time.time()
         result_set = RadiusNNResultSet(radius=radius)
-        octree.octree_radius_search_fast(root, db_np, result_set, query)
+        octree.octree_radius_search(root, db_np, result_set, query)
         radius_time_sum += time.time() - begin_t
+        
+        begin_t = time.time()
+        result_set = RadiusNNResultSet(radius=radius)
+        octree.octree_radius_search_fast(root, db_np, result_set, query)
+        radius_fast_time_sum += time.time() - begin_t
 
         begin_t = time.time()
         diff = np.linalg.norm(np.expand_dims(query, 0) - db_np, axis=1)
         nn_idx = np.argsort(diff)
         nn_dist = diff[nn_idx]
         brute_time_sum += time.time() - begin_t
-    print("Octree: build %.3f, knn %.3f, radius %.3f, brute %.3f" % (construction_time_sum*1000/iteration_num,
+    print("Octree: build %.3f, knn %.3f, radius %.3f, radius_fast %0.3f, brute %.3f" % (construction_time_sum*1000/iteration_num,
                                                                      knn_time_sum*1000/iteration_num,
                                                                      radius_time_sum*1000/iteration_num,
+                                                                     radius_fast_time_sum*1000/iteration_num,
                                                                      brute_time_sum*1000/iteration_num))
 
     print("kdtree --------------")
