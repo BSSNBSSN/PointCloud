@@ -53,6 +53,17 @@ def axis_round_robin(axis, dim):
         return 0
     else:
         return axis + 1
+    
+def axis_round_robin_adaptive(db, point_indices):
+    data = db[point_indices, :]
+    var = np.max(data, axis = 0) - np.min(data, axis = 0)
+    axis_var_max = max(var[0], var[1], var[2])
+    if axis_var_max == var[0]:
+        return 0
+    elif axis_var_max == var[1]:
+        return 1
+    elif axis_var_max == var[2]:
+        return 2
 
 # 功能：通过递归的方式构建树
 # 输入：
@@ -84,16 +95,28 @@ def kdtree_recursive_build(root, db, point_indices, axis, leaf_size):
         
         root.value = (middle_left_point_value + middle_right_point_value) / 2
         
+        # root.left = kdtree_recursive_build(root.left,
+        #                                    db,
+        #                                    point_indices_sorted[0:middle_right_idx],
+        #                                    axis_round_robin(axis, dim = db.shape[1]),
+        #                                    leaf_size)
+        
+        # root.right = kdtree_recursive_build(root.right,
+        #                                     db,
+        #                                     point_indices_sorted[middle_right_idx:],
+        #                                     axis_round_robin(axis, dim = db.shape[1]),
+        #                                     leaf_size)
+        
         root.left = kdtree_recursive_build(root.left,
                                            db,
                                            point_indices_sorted[0:middle_right_idx],
-                                           axis_round_robin(axis, dim = db.shape[1]),
+                                           axis_round_robin_adaptive(db, point_indices_sorted[0:middle_right_idx]),
                                            leaf_size)
         
         root.right = kdtree_recursive_build(root.right,
                                             db,
                                             point_indices_sorted[middle_right_idx:],
-                                            axis_round_robin(axis, dim = db.shape[1]),
+                                            axis_round_robin_adaptive(db, point_indices_sorted[middle_right_idx:]),
                                             leaf_size)
 
         # 屏蔽结束
