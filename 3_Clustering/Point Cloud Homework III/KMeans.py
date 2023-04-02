@@ -22,43 +22,43 @@ class K_Means(object):
         self.tolerance_ = tolerance
         self.max_iter_ = max_iter
         
-    def e_step(self, miu, data):
+    def e_step(self, mu, data):
         r = np.zeros([len(data), self.k_], dtype = int)
         for i in range(len(data)):
             min_dis = 99999.999
-            miu_idx = int()
+            mu_idx = int()
             for j in range(self.k_):
-                dis = np.linalg.norm(data[i] - miu[j])
+                dis = np.linalg.norm(data[i] - mu[j])
                 if dis < min_dis:
                     min_dis = dis
-                    miu_idx = j
-            r[i][miu_idx] = 1
+                    mu_idx = j
+            r[i][mu_idx] = 1
         return r
 
     def m_step(self, r, data):
-        miu = np.empty([self.k_, 2], dtype = float)
+        mu = np.empty([self.k_, 2], dtype = float)
         for i in range(self.k_):
             point_num = 0
             point_place = np.zeros([1, 2], dtype = float)
             for j in range(len(data)):
                 point_num += r[j][i]
                 point_place += r[j][i] * data[j]
-            miu[i] = point_place / point_num
-        return miu
+            mu[i] = point_place / point_num
+        return mu
 
     def fit(self, data):
         # 作业1
         # 屏蔽开始
         
-        miu = data[:self.k_]
+        mu = data[:self.k_]
         r = np.zeros([len(data), self.k_], dtype = int)
         past_r = np.zeros([len(data), self.k_], dtype = int)
         
         cnt = 0
-        for i in range(self.max_iter_):
+        for _ in range(self.max_iter_):
             past_r = r
-            r = self.e_step(miu, data)
-            miu = self.m_step(r, data)
+            r = self.e_step(mu, data)
+            mu = self.m_step(r, data)
             
             if r.all() == past_r.all():
                 if cnt >= 3:
@@ -80,22 +80,39 @@ class K_Means(object):
         return result
 
 if __name__ == '__main__':
-    x = np.array([[1, 2], [1.5, 1.8], [5, 8], [8, 8], [1, 0.6], [9, 11]])
+    # x = np.array([[1, 2], [1.5, 1.8], [5, 8], [8, 8], [1, 0.6], [9, 11]])
     # a = np.array(np.random.rand(100, 2) * 5)
-    # b = np.array(np.random.rand(10, 2) * 5 + 5)
+    # b = np.array(np.random.rand(100, 2) * 5 + 5)
     # x = np.append(a, b, axis = 0)
-    k_means = K_Means(n_clusters=2)
+    
+    true_Mu = [[7, 1], [0, 0], [1, 7]]
+    true_Var = [[0.5, 3], [2, 2], [3, 0.5]]
+    
+    # 第一簇的数据
+    num1, mu1, var1 = 400, true_Mu[0], true_Var[0]
+    X1 = np.random.multivariate_normal(mu1, np.diag(var1), num1)
+    # 第二簇的数据
+    num2, mu2, var2 = 600, true_Mu[1], true_Var[1]
+    X2 = np.random.multivariate_normal(mu2, np.diag(var2), num2)
+    # 第三簇的数据
+    num3, mu3, var3 = 1000, true_Mu[2], true_Var[2]
+    X3 = np.random.multivariate_normal(mu3, np.diag(var3), num3)
+    # 合并在一起
+    x = np.vstack((X1, X2, X3))
+    
+    k_means = K_Means(n_clusters=3)
     r = k_means.fit(x)
     
-    cluster = [[] for i in range(2)]
+    cluster = [[] for i in range(3)]
     for i in range(len(x)):
-        for j in range(2):
+        for j in range(3):
             if r[i][j] == 1:
                 cluster[j].append(x[i])
     Point_Show(cluster[0],"red")
-    Point_Show(cluster[1], "blue")
+    Point_Show(cluster[1], "green")
+    Point_Show(cluster[2], "blue")
     plt.show()
-    print(r)
+    # print(r)
     # cat = k_means.predict(x)
     # print(cat)
 
