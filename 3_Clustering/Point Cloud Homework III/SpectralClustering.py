@@ -2,7 +2,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.neighbors import kneighbors_graph
 
+from KMeans import K_Means
 
 def Point_Show(point,color):
     x = []
@@ -12,72 +14,41 @@ def Point_Show(point,color):
         x.append(point[i][0])
         y.append(point[i][1])
     plt.scatter(x, y,color=color)
-
-
     
-class K_Means(object):
+class SpectralClustering(object):
     # k是分组数；tolerance‘中心点误差’；max_iter是迭代次数
-    def __init__(self, n_clusters=2, tolerance=0.0001, max_iter=300):
+    def __init__(self, n_clusters, max_iter=100, n_neighbors = 20):
         self.k_ = n_clusters
-        self.tolerance_ = tolerance
+        self.n_neighbors = n_neighbors
         self.max_iter_ = max_iter
-        self.r = []
+        self.KMeans = K_Means(n_clusters , max_iter)
         
-    def e_step(self, mu, data):
-        r = np.zeros([len(data), self.k_], dtype = int)
-        for i in range(len(data)):
-            min_dis = 99999.999
-            mu_idx = int()
-            for j in range(self.k_):
-                dis = np.linalg.norm(data[i] - mu[j])
-                if dis < min_dis:
-                    min_dis = dis
-                    mu_idx = j
-            r[i][mu_idx] = 1
-        return r
-
-    def m_step(self, r, data):
-        mu = np.empty([self.k_, 2], dtype = float)
-        for i in range(self.k_):
-            point_num = 0
-            point_place = np.zeros([1, 2], dtype = float)
-            for j in range(len(data)):
-                point_num += r[j][i]
-                point_place += r[j][i] * data[j]
-            mu[i] = point_place / point_num
-        return mu
-
     def fit(self, data):
         # 作业1
         # 屏蔽开始
         
-        mu = data[:self.k_]
-        r = np.zeros([len(data), self.k_], dtype = int)
-        past_r = np.zeros([len(data), self.k_], dtype = int)
+        #建立相似矩阵
+        weight = kneighbors_graph(data, n_neighbors = self.n_neighbors, mode='connectivity', include_self=False)
+        weight = 0.5 * (weight + weight.T)
+        W = weight.toarray()
+        #计算拉普拉斯算子
+        D = np.diag(np.sum(W, axis=1))
+        L = D - W
         
-        cnt = 0
-        for _ in range(self.max_iter_):
-            past_r = r
-            r = self.e_step(mu, data)
-            mu = self.m_step(r, data)
-            
-            if r.all() == past_r.all():
-                if cnt >= 3:
-                    break
-                else:
-                    cnt += 1
-            else:
-                cnt = 0
-        self.r = r
-        return r
+        #计算L的特征向量
+        w , v = np.linalg.eig(L)
+        
+        #计算前最小的n个特征向量
+        n_idx = np.argsort(w)[:self.k_]
+        self.vec = v[:,n_idx]
+        
+        #对特征向量进行kmeans聚类
+        self.KMeans.fit(self.vec)
+        self.label = self.KMeans.predict(self.vec)
         # 屏蔽结束
         
     def predict(self, p_datas):
-        result = []
-        # 作业2
-        # 屏蔽开始
-        result = np.argmax(self.r, axis = 1 )    #比较每个点的后验概率
-        return result
+        return self.label
         # 屏蔽结束
 
 if __name__ == '__main__':
@@ -101,8 +72,8 @@ if __name__ == '__main__':
     # 合并在一起
     x = np.vstack((X1, X2, X3))
     
-    k_means = K_Means(n_clusters=3)
-    r = k_means.fit(x)
+    spectral_clustering = SpectralClustering(n_clusters=3)
+    r = spectral_clustering.fit(x)
     
     cluster = [[] for i in range(3)]
     for i in range(len(x)):
@@ -114,6 +85,6 @@ if __name__ == '__main__':
     Point_Show(cluster[2], "blue")
     plt.show()
     # print(r)
-    # cat = k_means.predict(x)
+    # cat = spectral_clustering.predict(x)
     # print(cat)
 
